@@ -1,0 +1,14 @@
+# Render Blueprint: static marketing site for RideWise
+# https://render.com/docs/blueprint-spec
+#
+# After pushing to GitHub/GitLab, connect the repo in the Render dashboard and
+# apply this blueprint, or create a Static Site manually:
+#   Build command: (leave empty)
+#   Publish directory: website
+
+services:
+  - type: web
+    name: ridewise-site
+    runtime: static
+    buildCommand: ""
+    staticPublishPath: ./website

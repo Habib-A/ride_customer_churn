@@ -2,11 +2,13 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 import joblib
 import numpy as np
+from pathlib import Path
 
 app = FastAPI(title="RideWise Churn Prediction API")
 
 # Load model
-model = joblib.load("models/random_forest.pkl")
+MODEL_PATH = Path(__file__).resolve().parent.parent / "model" / "random_forest_model.pkl"
+model = joblib.load(MODEL_PATH)
 
 class RideFeatures(BaseModel):
     avg_rating_given: float

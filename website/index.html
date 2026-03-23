@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="RideWise — customer intelligence and churn prediction for ride-hailing. RFMS segmentation, Random Forest scoring, and a production-ready prediction API."
+    />
+    <title>RideWise — Rider churn intelligence</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/styles.css" />
+  </head>
+  <body>
+    <div class="bg-mesh" aria-hidden="true"></div>
+    <div class="grid-overlay" aria-hidden="true"></div>
+
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="logo" href="#top">
+          <span class="logo-mark" aria-hidden="true">◈</span>
+          RideWise
+        </a>
+        <button type="button" class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="navMenu">
+          Menu
+        </button>
+        <nav aria-label="Primary">
+          <ul class="nav-links" id="navMenu">
+            <li><a href="#product">Product</a></li>
+            <li><a href="#rfms">RFMS</a></li>
+            <li><a href="#stack">Stack</a></li>
+            <li><a href="#api">API</a></li>
+            <li>
+              <a class="btn btn-primary" href="#deploy">Deploy</a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <main id="top">
+      <section class="section hero">
+        <div class="hero-grid">
+          <div>
+            <span class="eyebrow">Ride-hailing analytics</span>
+            <h1>Know who is about to leave—before they open another app.</h1>
+            <p class="lead">
+              RideWise turns trip-level history into rider-level intelligence: RFMS-style
+              features, balanced churn modeling, and a FastAPI service you can ship to
+              production—or demo with Streamlit.
+            </p>
+            <div class="hero-actions">
+              <a class="btn btn-primary" href="#deploy">Host on Render</a>
+              <a class="btn btn-ghost" href="#rfms">How scoring works</a>
+            </div>
+            <p class="hero-note">
+              Backend exposes <code>POST /predict</code> with churn probability and binary
+              classification—ready to wire your own dashboard or retention workflows.
+            </p>
+          </div>
+          <div class="code-panel" role="region" aria-label="Example API request">
+            <header>
+              <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+              <span>POST /predict</span>
+            </header>
+            <pre><code>{
+  <span class="key">"avg_rating_given"</span>: <span class="num">4.5</span>,
+  <span class="key">"recency_days"</span>: <span class="num">10</span>,
+  <span class="key">"frequency"</span>: <span class="num">20</span>,
+  <span class="key">"monetary"</span>: <span class="num">300.0</span>,
+  <span class="key">"surge_exposure"</span>: <span class="num">0.3</span>
+}</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="section section-tight" id="product">
+        <div class="section-head">
+          <h2>Built for ops and data teams</h2>
+          <p>
+            The project pipeline merges drivers, riders, and trips; engineers RFMS metrics;
+            and trains a Random Forest classifier with class balancing—mirroring how real
+            marketplaces handle skewed churn labels.
+          </p>
+        </div>
+        <div class="cards cols-2">
+          <article class="card">
+            <div class="card-icon" aria-hidden="true">◎</div>
+            <h3>Segmentation that matches the business</h3>
+            <p>
+              Recency, frequency, monetary value, and surge exposure capture both loyalty and
+              price sensitivity—so you can prioritize riders who are valuable but slipping.
+            </p>
+          </article>
+          <article class="card">
+            <div class="card-icon" aria-hidden="true">⚡</div>
+            <h3>API-first delivery</h3>
+            <p>
+              A lightweight FastAPI app loads a serialized Random Forest model and returns
+              <strong style="color: var(--text)">is_churning</strong> plus calibrated
+              <strong style="color: var(--text)">probability</strong> for downstream tools.
+            </p>
+          </article>
+          <article class="card">
+            <div class="card-icon" aria-hidden="true">◧</div>
+            <h3>Interactive validation</h3>
+            <p>
+              The Streamlit dashboard sliders map directly to API fields—ideal for stakeholder
+              demos and what-if analysis without touching raw data.
+            </p>
+          </article>
+          <article class="card">
+            <div class="card-icon" aria-hidden="true">▥</div>
+            <h3>Notebook-driven rigor</h3>
+            <p>
+              EDA, RFMS construction, and modeling notebooks document the full path from raw
+              CSVs to a holdout-evaluated classifier trained on large rider samples.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" id="rfms">
+        <div class="section-head">
+          <h2>RFMS signals at a glance</h2>
+          <p>
+            Inspired by classic RFM analysis, extended for on-demand pricing—aligned with the
+            RideWise feature schema used in training and inference.
+          </p>
+        </div>
+        <div class="cards cols-4">
+          <article class="card">
+            <h3>Recency</h3>
+            <p>Days since the rider’s last trip—staleness is one of the strongest churn hints.</p>
+          </article>
+          <article class="card">
+            <h3>Frequency</h3>
+            <p>How often they ride; separates habitual users from occasional ones.</p>
+          </article>
+          <article class="card">
+            <h3>Monetary</h3>
+            <p>Spend level helps you weigh retention ROI against acquisition cost.</p>
+          </article>
+          <article class="card">
+            <h3>Surge exposure</h3>
+            <p>Share of trips during surge—proxy for price sensitivity and peak usage.</p>
+          </article>
+        </div>
+        <div class="rfms-bar" aria-hidden="true">
+          <div class="rfms-item"><strong>R</strong><span>recency_days</span></div>
+          <div class="rfms-item"><strong>F</strong><span>frequency</span></div>
+          <div class="rfms-item"><strong>M</strong><span>monetary</span></div>
+          <div class="rfms-item"><strong>S</strong><span>surge_exposure</span></div>
+        </div>
+        <p style="text-align: center; margin-top: 2rem; color: var(--muted); font-size: 0.95rem">
+          Models also consume <strong style="color: var(--text)">avg_rating_given</strong>—rider
+          satisfaction feeds the same scoring layer.
+        </p>
+      </section>
+
+      <section class="section section-tight" id="stack">
+        <div class="section-head">
+          <h2>Stack &amp; architecture</h2>
+          <p>
+            Container-friendly Python services, standard ML serialization, and clear separation
+            between inference and presentation.
+          </p>
+        </div>
+        <div class="stack-row">
+          <span class="pill"><strong>Python 3.10</strong> · runtime</span>
+          <span class="pill"><strong>FastAPI</strong> · REST API</span>
+          <span class="pill"><strong>scikit-learn</strong> · Random Forest</span>
+          <span class="pill"><strong>joblib</strong> · model artifact</span>
+          <span class="pill"><strong>Streamlit</strong> · dashboard</span>
+          <span class="pill"><strong>Docker</strong> · compose-ready</span>
+        </div>
+        <div class="flow">
+          <div class="flow-step">
+            <span class="flow-num">1</span>
+            <div>
+              <h3 style="margin-top: 0">Data &amp; notebooks</h3>
+              <p>
+                Cleaned trip and rider tables feed EDA and RFMS notebooks; aggregated rider
+                records (on the order of tens of thousands of rows in the modeling set) drive
+                train/test evaluation.
+              </p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <span class="flow-num">2</span>
+            <div>
+              <h3 style="margin-top: 0">Model artifact</h3>
+              <p>
+                A balanced Random Forest classifier is persisted for low-latency inference
+                alongside the five numeric features expected by the API contract.
+              </p>
+            </div>
+          </div>
+          <div class="flow-step">
+            <span class="flow-num">3</span>
+            <div>
+              <h3 style="margin-top: 0">Services</h3>
+              <p>
+                Uvicorn serves the FastAPI app; Streamlit (or any client) calls your deployed
+                <code style="font-family: var(--font-mono); font-size: 0.9em">/predict</code>
+                endpoint with JSON payloads.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="api">
+        <div class="section-head">
+          <h2>Contract you can rely on</h2>
+          <p>
+            The prediction service accepts rider-level aggregates and responds with a churn
+            label and probability—simple to integrate with CRMs, in-app messaging, or internal
+            BI.
+          </p>
+        </div>
+        <div class="cards cols-2">
+          <article class="card">
+            <h3>Request</h3>
+            <p style="margin-bottom: 1rem">
+              Five floats/ints: rating behavior, recency, frequency, monetary, surge exposure.
+            </p>
+            <pre style="margin: 0; font-family: var(--font-mono); font-size: 0.8rem; color: var(--muted); overflow-x: auto"><code>POST /predict
+Content-Type: application/json</code></pre>
+          </article>
+          <article class="card">
+            <h3>Response</h3>
+            <p style="margin-bottom: 1rem">Binary churn flag plus positive-class probability.</p>
+            <pre style="margin: 0; font-family: var(--font-mono); font-size: 0.8rem; color: var(--muted); overflow-x: auto"><code>{
+  "is_churning": 0 | 1,
+  "probability": 0.0 – 1.0
+}</code></pre>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" id="deploy">
+        <div class="cta">
+          <h2>Deploy this site on Render</h2>
+          <p>
+            This folder is a static site: connect your Git repository to Render, create a
+            <strong style="color: var(--text)">Static Site</strong>, set the publish directory
+            to <code style="font-family: var(--font-mono); font-size: 0.9em">website</code>, and
+            ship. Use the included <code style="font-family: var(--font-mono); font-size: 0.9em">render.yaml</code> at the repo root for
+            infrastructure-as-code, or configure manually in the Render dashboard.
+          </p>
+          <a
+            class="btn btn-primary"
+            href="https://render.com/docs/static-sites"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Render static site docs
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <div>
+          <div class="footer-brand">RideWise</div>
+          <div>Customer churn intelligence for ride marketplaces.</div>
+        </div>
+        <p class="disclaimer">
+          Demonstration project: not affiliated with any commercial ride-hailing brand. Model
+          performance depends on your data and retraining cadence; validate before production
+          use.
+        </p>
+      </div>
+    </footer>
+
+    <script>
+      (function () {
+        var toggle = document.getElementById("navToggle");
+        var menu = document.getElementById("navMenu");
+        if (!toggle || !menu) return;
+        toggle.addEventListener("click", function () {
+          var open = menu.classList.toggle("is-open");
+          toggle.setAttribute("aria-expanded", open ? "true" : "false");
+        });
+        menu.querySelectorAll("a").forEach(function (link) {
+          link.addEventListener("click", function () {
+            menu.classList.remove("is-open");
+            toggle.setAttribute("aria-expanded", "false");
+          });
+        });
+      })();
+    </script>
+  </body>
+</html>

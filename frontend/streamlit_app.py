@@ -1,9 +1,10 @@
 import streamlit as st
 import requests
+import os
 
 st.title("RideWise Churn Prediction Dashboard")
 
-API_URL = "https://your-backend-url.onrender.com/predict"
+API_URL = os.getenv("API_URL", "http://127.0.0.1:8000/predict")
 
 avg_rating = st.slider("Avg Rating Given", 1.0, 5.0, 4.5)
 recency = st.number_input("Recency (days)", 0, 200, 10)
