@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>RideWise — Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  </head>
+  <body>
+    <div class="bg-mesh" aria-hidden="true"></div>
+    <div class="grid-overlay" aria-hidden="true"></div>
+
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="logo" href="/">
+          <span class="logo-mark" aria-hidden="true">◈</span>
+          RideWise
+        </a>
+        <button
+          type="button"
+          class="nav-toggle"
+          id="navToggle"
+          aria-expanded="false"
+          aria-controls="navMenu"
+        >
+          Menu
+        </button>
+        <nav aria-label="Primary">
+          <ul class="nav-links" id="navMenu">
+            <li><a href="/">Dashboard</a></li>
+            <li><a href="/prediction.html">Prediction</a></li>
+            <li><a href="/segmentation.html">Customer Segmentation</a></li>
+            <li><a href="/rfms-distributions.html">RFMS Distributions</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <main class="section section-tight">
+      <div class="section-head">
+        <h2>RideWise Dashboard</h2>
+        <p>
+          Business KPIs and quick visual signals derived from your RFMS dataset, riders
+          churn probabilities, and driver vehicle types.
+        </p>
+      </div>
+
+      <div id="dashboardError" class="error-card" style="display:none; margin-left:auto; margin-right:auto; max-width: 720px"></div>
+
+      <div class="cards cols-4">
+        <article class="card">
+          <h3>Total riders</h3>
+          <div class="kpi-value" id="kpiTotalRiders">—</div>
+          <p>Rider records in the dataset.</p>
+        </article>
+        <article class="card">
+          <h3>Avg churn probability</h3>
+          <div class="kpi-value" id="kpiAvgChurnProb">—</div>
+          <p>Mean of `churn_prob` across riders.</p>
+        </article>
+        <article class="card">
+          <h3>Churn rate (>= 0.5)</h3>
+          <div class="kpi-value" id="kpiChurnRate">—</div>
+          <p>Share of riders predicted at risk.</p>
+        </article>
+        <article class="card">
+          <h3>Avg monetary (RFMS)</h3>
+          <div class="kpi-value" id="kpiAvgMonetary">—</div>
+          <p>Mean spend/monetary feature per rider.</p>
+        </article>
+        <article class="card">
+          <h3>Avg surge exposure</h3>
+          <div class="kpi-value" id="kpiAvgSurgeExposure">—</div>
+          <p>Mean fraction of trips occurring under surge pricing.</p>
+        </article>
+      </div>
+
+      <div class="cards cols-2" style="margin-top: 1.5rem">
+        <article class="card">
+          <h3>Revenue generation proxy</h3>
+          <p style="margin: 0 0 1rem; color: var(--muted)">
+            Average `monetary` by rider segment (higher = more value at risk).
+          </p>
+          <div class="chart-wrap">
+            <canvas id="revenueBySegmentChart"></canvas>
+          </div>
+        </article>
+        <article class="card">
+          <h3>Ride modes used</h3>
+          <p style="margin: 0 0 1rem; color: var(--muted)">
+            Distribution of driver vehicle types (SUV, Sedan, Motorcycle).
+          </p>
+          <div class="chart-wrap">
+            <canvas id="rideModesChart"></canvas>
+          </div>
+        </article>
+      </div>
+
+      <div class="cards" style="margin-top: 1.25rem">
+        <article class="card">
+          <h3>Churn risk by customer segment</h3>
+          <p style="margin: 0 0 1rem; color: var(--muted)">
+            Share of riders with churn probability >= 0.5, grouped by `riders_segment`.
+          </p>
+          <div class="chart-wrap" style="height: 360px">
+            <canvas id="churnBySegmentChart"></canvas>
+          </div>
+        </article>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <div>
+          <div class="footer-brand">RideWise</div>
+          <div>Customer churn intelligence for ride marketplaces.</div>
+        </div>
+        <p class="disclaimer">
+          This demo visualizes existing dataset artifacts. Validate model performance on your
+          latest data before production use.
+        </p>
+      </div>
+    </footer>
+
+    <script src="assets/dashboard.js" defer></script>
+    <script src="assets/nav.js" defer></script>
+  </body>
+</html>
+

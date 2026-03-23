@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>RideWise — RFMS Distributions</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  </head>
+  <body>
+    <div class="bg-mesh" aria-hidden="true"></div>
+    <div class="grid-overlay" aria-hidden="true"></div>
+
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="logo" href="/">
+          <span class="logo-mark" aria-hidden="true">◈</span>
+          RideWise
+        </a>
+        <button
+          type="button"
+          class="nav-toggle"
+          id="navToggle"
+          aria-expanded="false"
+          aria-controls="navMenu"
+        >
+          Menu
+        </button>
+        <nav aria-label="Primary">
+          <ul class="nav-links" id="navMenu">
+            <li><a href="/">Dashboard</a></li>
+            <li><a href="/prediction.html">Prediction</a></li>
+            <li><a href="/segmentation.html">Customer Segmentation</a></li>
+            <li><a href="/rfms-distributions.html">RFMS Distributions</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <main class="section section-tight">
+      <div class="section-head">
+        <h2>RFMS Distributions</h2>
+        <p>
+          Frequency of score buckets for Recency (R), Frequency (F), Monetary (M), and Surge
+          (S) scores from the processed RFMS dataset.
+        </p>
+      </div>
+
+      <div id="rfmsError" class="error-card" style="display:none; margin-left:auto; margin-right:auto; max-width: 720px"></div>
+
+      <div class="cards cols-2">
+        <article class="card">
+          <h3>Recency (R_score)</h3>
+          <div class="chart-wrap" style="height: 360px">
+            <canvas id="rScoreChart"></canvas>
+          </div>
+        </article>
+        <article class="card">
+          <h3>Frequency (F_score)</h3>
+          <div class="chart-wrap" style="height: 360px">
+            <canvas id="fScoreChart"></canvas>
+          </div>
+        </article>
+        <article class="card">
+          <h3>Monetary (M_score)</h3>
+          <div class="chart-wrap" style="height: 360px">
+            <canvas id="mScoreChart"></canvas>
+          </div>
+        </article>
+        <article class="card">
+          <h3>Surge exposure (S_score)</h3>
+          <div class="chart-wrap" style="height: 360px">
+            <canvas id="sScoreChart"></canvas>
+          </div>
+        </article>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <div>
+          <div class="footer-brand">RideWise</div>
+          <div>Customer churn intelligence for ride marketplaces.</div>
+        </div>
+        <p class="disclaimer">
+          RFMS distributions are computed from `Data/Processed_data/RideWise_RFMS_df.csv`.
+        </p>
+      </div>
+    </footer>
+
+    <script src="assets/rfms-distributions.js" defer></script>
+    <script src="assets/nav.js" defer></script>
+  </body>
+</html>
+

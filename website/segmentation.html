@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>RideWise — Customer Segmentation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  </head>
+  <body>
+    <div class="bg-mesh" aria-hidden="true"></div>
+    <div class="grid-overlay" aria-hidden="true"></div>
+
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="logo" href="/">
+          <span class="logo-mark" aria-hidden="true">◈</span>
+          RideWise
+        </a>
+        <button
+          type="button"
+          class="nav-toggle"
+          id="navToggle"
+          aria-expanded="false"
+          aria-controls="navMenu"
+        >
+          Menu
+        </button>
+        <nav aria-label="Primary">
+          <ul class="nav-links" id="navMenu">
+            <li><a href="/">Dashboard</a></li>
+            <li><a href="/prediction.html">Prediction</a></li>
+            <li><a href="/segmentation.html">Customer Segmentation</a></li>
+            <li><a href="/rfms-distributions.html">RFMS Distributions</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <main class="section section-tight">
+      <div class="section-head">
+        <h2>Customer Segmentation</h2>
+        <p>
+          RFMS-derived customer segments and the most common RFMS combinations.
+        </p>
+      </div>
+
+      <div id="segmentationError" class="error-card" style="display:none; margin-left:auto; margin-right:auto; max-width: 720px"></div>
+
+      <div class="cards cols-2">
+        <article class="card">
+          <h3>Riders segment distribution</h3>
+          <p style="margin: 0 0 1rem; color: var(--muted)">
+            Count of riders grouped by <code>riders_segment</code>.
+          </p>
+          <div class="chart-wrap" style="height: 380px">
+            <canvas id="segmentsChart"></canvas>
+          </div>
+        </article>
+
+        <article class="card">
+          <h3>Top RFMS combinations</h3>
+          <p style="margin: 0 0 1rem; color: var(--muted)">
+            Most frequent <code>RFMS</code> code patterns.
+          </p>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>RFMS</th>
+                  <th>Count</th>
+                </tr>
+              </thead>
+              <tbody id="topRfmsTableBody"></tbody>
+            </table>
+          </div>
+        </article>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <div>
+          <div class="footer-brand">RideWise</div>
+          <div>Customer churn intelligence for ride marketplaces.</div>
+        </div>
+        <p class="disclaimer">
+          Segmentation is computed from the processed RFMS dataset shipped with the project.
+        </p>
+      </div>
+    </footer>
+
+    <script src="assets/segmentation.js" defer></script>
+    <script src="assets/nav.js" defer></script>
+  </body>
+</html>
+
