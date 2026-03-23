@@ -1,14 +1,16 @@
-# Render Blueprint: static marketing site for RideWise
+#
+# Render Blueprint: RideWise (FastAPI + served frontend)
 # https://render.com/docs/blueprint-spec
 #
-# After pushing to GitHub/GitLab, connect the repo in the Render dashboard and
-# apply this blueprint, or create a Static Site manually:
-#   Build command: (leave empty)
-#   Publish directory: website
+# Deploys a single web service that serves:
+#   - `GET /` (the professionally styled RideWise webpage)
+#   - `POST /predict` (the churn prediction endpoint)
 
 services:
   - type: web
-    name: ridewise-site
-    runtime: static
-    buildCommand: ""
-    staticPublishPath: ./website
+    name: ridewise
+    runtime: python
+    plan: free
+    buildCommand: "pip install -r backend/requirements.txt"
+    startCommand: "cd backend && uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"
+    healthCheckPath: /

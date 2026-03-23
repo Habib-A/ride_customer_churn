@@ -3,6 +3,7 @@ from pydantic import BaseModel
 import joblib
 import numpy as np
 from pathlib import Path
+from fastapi.staticfiles import StaticFiles
 
 app = FastAPI(title="RideWise Churn Prediction API")
 
@@ -34,3 +35,11 @@ def predict_churn(data: RideFeatures):
         "is_churning": int(prediction),
         "probability": float(probability)
     }
+
+
+# Serve the professionally designed RideWise webpage from `website/`.
+# Mounting is optional so backend-only usage still works in development.
+STATIC_DIR = Path(__file__).resolve().parent.parent.parent / "website"
+if STATIC_DIR.exists():
+    # Mount after API routes so `/predict` keeps working.
+    app.mount("/", StaticFiles(directory=str(STATIC_DIR), html=True), name="static")

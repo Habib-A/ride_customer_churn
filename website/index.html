@@ -79,6 +79,125 @@
         </div>
       </section>
 
+      <section class="section section-tight" id="predict">
+        <div class="section-head">
+          <h2>Try the churn predictor</h2>
+          <p>
+            Enter rider-level RFMS features (and satisfaction rating). The page calls
+            <code>POST /predict</code> and returns a churn flag plus churn probability.
+          </p>
+        </div>
+
+        <div class="cards cols-2">
+          <article class="card">
+            <h3>Inputs</h3>
+            <p style="margin-top: 0.25rem; margin-bottom: 1.25rem; color: var(--muted)">
+              These fields map directly to the API’s expected schema.
+            </p>
+
+            <form id="predictForm">
+              <div class="form-grid">
+                <label class="field">
+                  <span>Avg rating given</span>
+                  <input
+                    name="avg_rating_given"
+                    type="number"
+                    min="1"
+                    max="5"
+                    step="0.1"
+                    value="4.5"
+                    required
+                  />
+                </label>
+
+                <label class="field">
+                  <span>Recency (days)</span>
+                  <input
+                    name="recency_days"
+                    type="number"
+                    min="0"
+                    step="1"
+                    value="10"
+                    required
+                  />
+                </label>
+
+                <label class="field">
+                  <span>Frequency</span>
+                  <input
+                    name="frequency"
+                    type="number"
+                    min="1"
+                    step="1"
+                    value="20"
+                    required
+                  />
+                </label>
+
+                <label class="field">
+                  <span>Monetary value</span>
+                  <input
+                    name="monetary"
+                    type="number"
+                    min="0"
+                    step="1"
+                    value="300"
+                    required
+                  />
+                </label>
+
+                <label class="field">
+                  <span>Surge exposure</span>
+                  <input
+                    name="surge_exposure"
+                    type="number"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value="0.3"
+                    required
+                  />
+                </label>
+              </div>
+
+              <div class="form-actions">
+                <button class="btn btn-primary" type="submit">
+                  <span id="predictSpinner" class="spinner" aria-hidden="true" style="display:none"></span>
+                  Predict Churn
+                </button>
+              </div>
+
+              <p id="predictStatus" class="form-status" role="status" aria-live="polite"></p>
+
+              <div id="predictError" class="error-card" style="display:none" role="alert"></div>
+            </form>
+          </article>
+
+          <article class="card">
+            <h3>Result</h3>
+            <p style="margin-top: 0.25rem; margin-bottom: 1.25rem; color: var(--muted)">
+              The model returns a binary churn prediction and probability for the positive class.
+            </p>
+
+            <div id="predictResult" class="result-card" style="display:none">
+              <div class="result-row">
+                <div class="result-key">Churn prediction</div>
+                <div class="result-value" id="churnLabel">—</div>
+              </div>
+              <div class="result-row">
+                <div class="result-key">Churn probability</div>
+                <div class="result-value" id="churnProbability">—</div>
+              </div>
+            </div>
+
+            <div class="result-hint">
+              Tip: if you’re hosting behind a different domain, the backend should also serve this page so
+              requests hit the same origin.
+            </div>
+          </article>
+        </div>
+      </section>
+
       <section class="section section-tight" id="product">
         <div class="section-head">
           <h2>Built for ops and data teams</h2>
@@ -246,21 +365,23 @@ Content-Type: application/json</code></pre>
 
       <section class="section" id="deploy">
         <div class="cta">
-          <h2>Deploy this site on Render</h2>
+          <h2>Deploy RideWise as a Render web service</h2>
           <p>
-            This folder is a static site: connect your Git repository to Render, create a
-            <strong style="color: var(--text)">Static Site</strong>, set the publish directory
-            to <code style="font-family: var(--font-mono); font-size: 0.9em">website</code>, and
-            ship. Use the included <code style="font-family: var(--font-mono); font-size: 0.9em">render.yaml</code> at the repo root for
-            infrastructure-as-code, or configure manually in the Render dashboard.
+            This project is configured to run as a single
+            <strong style="color: var(--text)">Python Web Service</strong> on Render. Use the
+            included <code style="font-family: var(--font-mono); font-size: 0.9em">render.yaml</code>
+            from the repo root so Render installs backend dependencies, starts FastAPI, serves
+            this webpage at <code style="font-family: var(--font-mono); font-size: 0.9em">/</code>,
+            and keeps churn prediction live at
+            <code style="font-family: var(--font-mono); font-size: 0.9em">/predict</code>.
           </p>
           <a
             class="btn btn-primary"
-            href="https://render.com/docs/static-sites"
+            href="https://docs.render.com/web-services"
             target="_blank"
             rel="noopener noreferrer"
           >
-            Render static site docs
+            Render web service docs
           </a>
         </div>
       </section>
@@ -297,5 +418,6 @@ Content-Type: application/json</code></pre>
         });
       })();
     </script>
+    <script src="assets/predict.js" defer></script>
   </body>
 </html>
