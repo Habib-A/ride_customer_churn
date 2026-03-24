@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="assets/styles.css" />
+    <link rel="stylesheet" href="/assets/styles.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   </head>
   <body>
@@ -37,7 +37,6 @@
             <li><a href="/">Dashboard</a></li>
             <li><a href="/prediction.html">Prediction</a></li>
             <li><a href="/segmentation.html">Customer Segmentation</a></li>
-            <li><a href="/rfms-distributions.html">RFMS Distributions</a></li>
           </ul>
         </nav>
       </div>
@@ -46,14 +45,12 @@
     <main class="section section-tight">
       <div class="section-head">
         <h2>Customer Segmentation</h2>
-        <p>
-          RFMS-derived customer segments and the most common RFMS combinations.
-        </p>
+        <p>RFMS-derived segments and per-rider feature distributions.</p>
       </div>
 
       <div id="segmentationError" class="error-card" style="display:none; margin-left:auto; margin-right:auto; max-width: 720px"></div>
 
-      <div class="cards cols-2">
+      <div class="cards" style="margin-bottom: 1.25rem">
         <article class="card">
           <h3>Riders segment distribution</h3>
           <p style="margin: 0 0 1rem; color: var(--muted)">
@@ -63,22 +60,43 @@
             <canvas id="segmentsChart"></canvas>
           </div>
         </article>
+      </div>
 
+      <div class="cards cols-2">
         <article class="card">
-          <h3>Top RFMS combinations</h3>
+          <h3>Distribution of trip frequency (per user)</h3>
           <p style="margin: 0 0 1rem; color: var(--muted)">
-            Most frequent <code>RFMS</code> code patterns.
+            Histogram of <code>frequency</code> from the RFMS rider table.
           </p>
-          <div class="table-wrap">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>RFMS</th>
-                  <th>Count</th>
-                </tr>
-              </thead>
-              <tbody id="topRfmsTableBody"></tbody>
-            </table>
+          <div class="chart-wrap" style="height: 300px">
+            <canvas id="freqDistChart"></canvas>
+          </div>
+        </article>
+        <article class="card">
+          <h3>Distribution of monetary</h3>
+          <p style="margin: 0 0 1rem; color: var(--muted)">
+            Histogram of <code>monetary</code>.
+          </p>
+          <div class="chart-wrap" style="height: 300px">
+            <canvas id="monetaryDistChart"></canvas>
+          </div>
+        </article>
+        <article class="card">
+          <h3>Distribution of recency</h3>
+          <p style="margin: 0 0 1rem; color: var(--muted)">
+            Histogram of <code>recency_days</code>.
+          </p>
+          <div class="chart-wrap" style="height: 300px">
+            <canvas id="recencyDistChart"></canvas>
+          </div>
+        </article>
+        <article class="card">
+          <h3>Distribution of surge exposure</h3>
+          <p style="margin: 0 0 1rem; color: var(--muted)">
+            Histogram of <code>surge_exposure</code> (0–1).
+          </p>
+          <div class="chart-wrap" style="height: 300px">
+            <canvas id="surgeDistChart"></canvas>
           </div>
         </article>
       </div>
@@ -91,13 +109,12 @@
           <div>Customer churn intelligence for ride marketplaces.</div>
         </div>
         <p class="disclaimer">
-          Segmentation is computed from the processed RFMS dataset shipped with the project.
+          Distributions are computed from `Data/Processed_data/RideWise_RFMS_df.csv`.
         </p>
       </div>
     </footer>
 
-    <script src="assets/segmentation.js" defer></script>
-    <script src="assets/nav.js" defer></script>
+    <script src="/assets/segmentation.js" defer></script>
+    <script src="/assets/nav.js" defer></script>
   </body>
 </html>
-

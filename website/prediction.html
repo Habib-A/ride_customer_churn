@@ -10,7 +10,8 @@
       href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="assets/styles.css" />
+    <link rel="stylesheet" href="/assets/styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   </head>
   <body>
     <div class="bg-mesh" aria-hidden="true"></div>
@@ -36,7 +37,6 @@
             <li><a href="/">Dashboard</a></li>
             <li><a href="/prediction.html">Prediction</a></li>
             <li><a href="/segmentation.html">Customer Segmentation</a></li>
-            <li><a href="/rfms-distributions.html">RFMS Distributions</a></li>
           </ul>
         </nav>
       </div>
@@ -144,23 +144,23 @@
         <article class="card">
           <h3>Result</h3>
           <p style="margin-top: 0.25rem; margin-bottom: 1.25rem; color: var(--muted)">
-            Binary churn prediction and probability for the positive class.
+            Churn risk vs not churn (model probability). Red = churn risk, green = not churn.
           </p>
 
-          <div id="predictResult" class="result-card" style="display: none">
-            <div class="result-row">
-              <div class="result-key">Churn prediction</div>
-              <div class="result-value" id="churnLabel">—</div>
-            </div>
-            <div class="result-row">
-              <div class="result-key">Churn probability</div>
-              <div class="result-value" id="churnProbability">—</div>
+          <div id="predictResult" style="display: none">
+            <p id="predictVerdict" class="predict-verdict" aria-live="polite"></p>
+            <div class="predict-chart-wrap">
+              <canvas id="churnGaugeChart" aria-label="Churn probability gauge"></canvas>
+              <div class="gauge-overlay" aria-hidden="true">
+                <span id="gaugeChurnPct" class="gauge-pct churn"></span>
+                <span id="gaugeNotChurnPct" class="gauge-pct ok"></span>
+              </div>
             </div>
           </div>
 
           <div class="result-hint">
-            Tip: if you host behind a different domain, keep backend and UI under the same service
-            so the request stays on the same origin.
+            Half doughnut: churn probability (red) vs remaining mass (green). Same-origin
+            <code>POST /predict</code>.
           </div>
         </article>
       </div>
@@ -178,8 +178,8 @@
       </div>
     </footer>
 
-    <script src="assets/predict.js" defer></script>
-    <script src="assets/nav.js" defer></script>
+    <script src="/assets/predict.js" defer></script>
+    <script src="/assets/nav.js" defer></script>
   </body>
 </html>
 

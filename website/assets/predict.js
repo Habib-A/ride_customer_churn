@@ -13,20 +13,24 @@ document.addEventListener("DOMContentLoaded", function () {
   if (!form) return;
 
   var status = document.getElementById("predictStatus");
-  var resultCard = document.getElementById("predictResult");
+  var resultWrap = document.getElementById("predictResult");
   var errorCard = document.getElementById("predictError");
-  var churnLabel = document.getElementById("churnLabel");
-  var churnProbability = document.getElementById("churnProbability");
+  var verdict = document.getElementById("predictVerdict");
+  var canvas = document.getElementById("churnGaugeChart");
+  var gaugeChurnPct = document.getElementById("gaugeChurnPct");
+  var gaugeNotChurnPct = document.getElementById("gaugeNotChurnPct");
 
   var submitBtn = form.querySelector('button[type="submit"]');
   var spinner = form.querySelector("#predictSpinner");
+
+  var gaugeChart = null;
 
   var fields = {
     avg_rating_given: form.querySelector('input[name="avg_rating_given"]'),
     recency_days: form.querySelector('input[name="recency_days"]'),
     frequency: form.querySelector('input[name="frequency"]'),
     monetary: form.querySelector('input[name="monetary"]'),
-    surge_exposure: form.querySelector('input[name="surge_exposure"]')
+    surge_exposure: form.querySelector('input[name="surge_exposure"]'),
   };
 
   function disableSubmit(disabled) {
@@ -35,7 +39,6 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function validatePayload(payload) {
-    // Basic client-side sanity checks to make the API response clearer.
     if (payload.avg_rating_given < 1 || payload.avg_rating_given > 5) return "Avg rating must be between 1 and 5.";
     if (payload.recency_days < 0) return "Recency must be >= 0.";
     if (payload.frequency < 1) return "Frequency must be >= 1.";
@@ -44,19 +47,102 @@ document.addEventListener("DOMContentLoaded", function () {
     return null;
   }
 
+  function renderGauge(p) {
+    if (!canvas || typeof Chart === "undefined") return;
+    var churn = Math.min(1, Math.max(0, p));
+    var rest = 1 - churn;
+
+    var churnPctStr = (churn * 100).toFixed(1) + "%";
+    var notStr = (rest * 100).toFixed(1) + "%";
+    if (gaugeChurnPct) gaugeChurnPct.textContent = "Churn risk: " + churnPctStr;
+    if (gaugeNotChurnPct) gaugeNotChurnPct.textContent = "Not churn: " + notStr;
+
+    if (gaugeChart) {
+      gaugeChart.destroy();
+      gaugeChart = null;
+    }
+
+    var ctx = canvas.getContext("2d");
+    gaugeChart = new Chart(ctx, {
+      type: "doughnut",
+      data: {
+        labels: ["Churn risk", "Not churn"],
+        datasets: [
+          {
+            data: [churn, rest],
+            backgroundColor: ["rgba(239, 68, 68, 0.92)", "rgba(34, 197, 94, 0.92)"],
+            borderWidth: 0,
+            hoverOffset: 4,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        rotation: -90,
+        circumference: 180,
+        cutout: "68%",
+        plugins: {
+          legend: {
+            position: "bottom",
+            labels: { color: "rgba(232,237,245,0.85)", padding: 16 },
+          },
+          tooltip: {
+            callbacks: {
+              label: function (ctx) {
+                var label = ctx.label || "";
+                var raw = ctx.raw;
+                if (typeof raw !== "number") return label;
+                return label + ": " + (raw * 100).toFixed(1) + "%";
+              },
+            },
+          },
+        },
+      },
+      plugins: [
+        {
+          id: "arcPercentLabels",
+          afterDatasetsDraw: function (chart) {
+            var meta = chart.getDatasetMeta(0);
+            if (!meta || !meta.data) return;
+            var c = chart.ctx;
+            c.save();
+            c.font = "600 13px DM Sans, system-ui, sans-serif";
+            c.textAlign = "center";
+            c.textBaseline = "middle";
+            meta.data.forEach(function (arc, i) {
+              var raw = chart.data.datasets[0].data[i];
+              if (typeof raw !== "number" || raw < 0.02) return;
+              var pos = arc.tooltipPosition();
+              c.fillStyle = i === 0 ? "rgba(254, 242, 242, 0.95)" : "rgba(220, 252, 231, 0.95)";
+              c.fillText((raw * 100).toFixed(1) + "%", pos.x, pos.y);
+            });
+            c.restore();
+          },
+        },
+      ],
+    });
+  }
+
   form.addEventListener("submit", async function (e) {
     e.preventDefault();
 
-    setVisible(resultCard, false);
+    setVisible(resultWrap, false);
     setVisible(errorCard, false);
     setText(status, "");
+    if (verdict) {
+      verdict.textContent = "";
+      verdict.className = "predict-verdict";
+    }
+    if (gaugeChurnPct) gaugeChurnPct.textContent = "";
+    if (gaugeNotChurnPct) gaugeNotChurnPct.textContent = "";
 
     var payload = {
       avg_rating_given: Number(fields.avg_rating_given.value),
       recency_days: Number(fields.recency_days.value),
       frequency: Number(fields.frequency.value),
       monetary: Number(fields.monetary.value),
-      surge_exposure: Number(fields.surge_exposure.value)
+      surge_exposure: Number(fields.surge_exposure.value),
     };
 
     var validationError = validatePayload(payload);
@@ -68,12 +154,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
     disableSubmit(true);
     try {
-      if (!resultCard || !status) return;
-
       var response = await fetch("/predict", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -88,14 +172,21 @@ document.addEventListener("DOMContentLoaded", function () {
       var probability = Number(data.probability);
       var isChurning = Number(data.is_churning);
 
-      var probabilityPct = isFinite(probability) ? (probability * 100).toFixed(1) : "0.0";
-      var label = isChurning === 1 ? "High churn risk" : "Lower churn risk";
+      if (!isFinite(probability)) probability = 0;
 
-      setText(churnLabel, label);
-      setText(churnProbability, probabilityPct + "%");
+      if (verdict) {
+        if (isChurning === 1) {
+          verdict.textContent = "Churn risk — predicted positive class";
+          verdict.className = "predict-verdict churn";
+        } else {
+          verdict.textContent = "Not churn — predicted negative class";
+          verdict.className = "predict-verdict ok";
+        }
+      }
 
+      renderGauge(probability);
       setVisible(errorCard, false);
-      setVisible(resultCard, true);
+      setVisible(resultWrap, true);
       setText(status, "Prediction complete.");
     } catch (err) {
       setText(status, "Network error contacting the prediction API.");
@@ -106,4 +197,3 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 });
-

@@ -1,6 +1,8 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+from fastapi.responses import FileResponse
 import joblib
+import json
 import numpy as np
 from pathlib import Path
 from fastapi.staticfiles import StaticFiles
@@ -18,6 +20,7 @@ DATA_DIR = REPO_ROOT / "Data"
 RFMS_CSV = DATA_DIR / "Processed_data" / "RideWise_RFMS_df.csv"
 RIDERS_CSV = DATA_DIR / "Raw_data" / "riders.csv"
 DRIVERS_CSV = DATA_DIR / "Raw_data" / "drivers.csv"
+TRIP_AGGREGATES_JSON = DATA_DIR / "Processed_data" / "trip_dashboard_aggregates.json"
 
 
 def _ensure_exists(path: Path) -> None:
@@ -63,7 +66,6 @@ def dashboard_kpis():
 
     total_riders = int(riders.shape[0])
     avg_churn_prob = float(riders["churn_prob"].mean())
-    churn_rate = float((riders["churn_prob"] >= 0.5).mean())
 
     avg_monetary = float(rfms["monetary"].mean())
     avg_surge_exposure = float(rfms["surge_exposure"].mean())
@@ -71,7 +73,6 @@ def dashboard_kpis():
     return {
         "total_riders": total_riders,
         "avg_churn_prob": _round1(avg_churn_prob),
-        "churn_rate": _round1(churn_rate),
         "avg_monetary": _round1(avg_monetary),
         "avg_surge_exposure": _round1(avg_surge_exposure),
     }
@@ -93,27 +94,6 @@ def revenue_by_segment():
     }
 
 
-@app.get("/api/dashboard/churn_by_segment")
-def churn_by_segment():
-    rfms = load_rfms_df()[["user_id", "riders_segment"]]
-    riders = load_riders_df()[["user_id", "churn_prob"]]
-
-    merged = rfms.merge(riders, on="user_id", how="inner")
-
-    rows = []
-    for seg, g in merged.groupby("riders_segment"):
-        if g.shape[0] == 0:
-            continue
-        churn_rate = float((g["churn_prob"] >= 0.5).mean())
-        rows.append((seg, churn_rate, int(g.shape[0])))
-
-    rows.sort(key=lambda t: t[1], reverse=True)
-    labels = [r[0] for r in rows]
-    churn_rates = [_round1(r[1]) for r in rows]
-    counts = [r[2] for r in rows]
-    return {"labels": labels, "churn_rates": churn_rates, "riders_count": counts}
-
-
 @app.get("/api/dashboard/ride_modes")
 def ride_modes():
     drivers = load_drivers_df()
@@ -122,6 +102,38 @@ def ride_modes():
     return {
         "labels": grouped.index.tolist(),
         "counts": grouped.values.tolist(),
+    }
+
+
+@lru_cache(maxsize=1)
+def load_trip_aggregates() -> dict:
+    if not TRIP_AGGREGATES_JSON.exists():
+        return {}
+    with TRIP_AGGREGATES_JSON.open("r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+@app.get("/api/dashboard/trip_aggregates")
+def trip_aggregates():
+    """Weather, age revenue, period revenue, payment — from bundled JSON (see file header)."""
+    data = load_trip_aggregates()
+    return {
+        "trips_by_weather": data.get("trips_by_weather", []),
+        "revenue_by_age_group": data.get("revenue_by_age_group", []),
+        "revenue_by_period": data.get("revenue_by_period", []),
+        "payment_type": data.get("payment_type", []),
+    }
+
+
+@app.get("/api/dashboard/referral_split")
+def referral_split():
+    riders = load_riders_df()
+    ref = riders["referred_by"].astype(str).str.strip()
+    referred = int(((ref.notna()) & (ref != "") & (ref.lower() != "nan")).sum())
+    total = int(riders.shape[0])
+    return {
+        "referred": referred,
+        "not_referred": max(0, total - referred),
     }
 
 
@@ -139,30 +151,35 @@ def segmentation_summary():
         {"segment": k, "count": int(v)} for k, v in segment_counts.items()
     ]
 
-    top_rfms = (
-        rfms.groupby("RFMS")
-        .size()
-        .sort_values(ascending=False)
-        .head(10)
-    )
-    top_rfms_data = [
-        {"rfms": k, "count": int(v)} for k, v in top_rfms.items()
-    ]
-
-    return {"segments": segment_data, "top_rfms": top_rfms_data}
+    return {"segments": segment_data}
 
 
-@app.get("/api/rfms/distributions")
-def rfms_distributions():
+def _histogram_labels_counts(
+    series: pd.Series, bins: int, *, decimals: int = 0
+) -> tuple[list[str], list[int]]:
+    counts, edges = np.histogram(series.astype(float).values, bins=bins)
+    labels: list[str] = []
+    fmt = "{:." + str(decimals) + "f}–{:." + str(decimals) + "f}"
+    for i in range(len(edges) - 1):
+        a, b = float(edges[i]), float(edges[i + 1])
+        labels.append(fmt.format(a, b))
+    return labels, [int(c) for c in counts]
+
+
+@app.get("/api/segmentation/feature_distributions")
+def feature_distributions():
     rfms = load_rfms_df()
-    out = {}
-    for col in ["R_score", "F_score", "M_score", "S_score"]:
-        counts = rfms[col].value_counts().sort_index()
-        out[col] = {
-            "labels": counts.index.tolist(),
-            "counts": counts.values.tolist(),
-        }
-    return out
+
+    def pack(col: str, bins: int, *, decimals: int = 0) -> dict:
+        labels, counts = _histogram_labels_counts(rfms[col], bins=bins, decimals=decimals)
+        return {"labels": labels, "counts": counts}
+
+    return {
+        "frequency": pack("frequency", 14, decimals=0),
+        "monetary": pack("monetary", 16, decimals=0),
+        "recency_days": pack("recency_days", 16, decimals=0),
+        "surge_exposure": pack("surge_exposure", 10, decimals=2),
+    }
 
 
 class RideFeatures(BaseModel):
@@ -191,9 +208,49 @@ def predict_churn(data: RideFeatures):
     }
 
 
-# Serve the professionally designed RideWise webpage from `website/`.
-# Mounting is optional so backend-only usage still works in development.
+# Serve the frontend without `StaticFiles` mounted at `/` — that mount can intercept
+# `/api/...` on some deployments and return 404 for API routes. Only `/assets` is mounted.
 STATIC_DIR = Path(__file__).resolve().parent.parent.parent / "website"
+_ALLOWED_HTML = frozenset(
+    {"index.html", "dashboard.html", "prediction.html", "segmentation.html"}
+)
+
+
+def _html_response(filename: str) -> FileResponse:
+    if filename not in _ALLOWED_HTML:
+        raise HTTPException(status_code=404, detail="Not found")
+    path = STATIC_DIR / filename
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="Not found")
+    return FileResponse(path, media_type="text/html")
+
+
 if STATIC_DIR.exists():
-    # Mount after API routes so `/predict` keeps working.
-    app.mount("/", StaticFiles(directory=str(STATIC_DIR), html=True), name="static")
+    _assets = STATIC_DIR / "assets"
+    if _assets.is_dir():
+        app.mount("/assets", StaticFiles(directory=str(_assets)), name="assets")
+
+
+@app.get("/")
+async def serve_root():
+    return _html_response("dashboard.html")
+
+
+@app.get("/index.html")
+async def serve_index_html():
+    return _html_response("index.html")
+
+
+@app.get("/dashboard.html")
+async def serve_dashboard_html():
+    return _html_response("dashboard.html")
+
+
+@app.get("/prediction.html")
+async def serve_prediction_html():
+    return _html_response("prediction.html")
+
+
+@app.get("/segmentation.html")
+async def serve_segmentation_html():
+    return _html_response("segmentation.html")

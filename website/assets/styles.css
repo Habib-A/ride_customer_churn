@@ -744,3 +744,56 @@ h3 {
 .data-table tr:last-child td {
   border-bottom: none;
 }
+
+/* Prediction half-doughnut */
+.predict-verdict {
+  font-size: 1.15rem;
+  font-weight: 800;
+  text-align: center;
+  margin: 0 0 1rem;
+  letter-spacing: -0.02em;
+}
+
+.predict-verdict.churn {
+  color: #f87171;
+}
+
+.predict-verdict.ok {
+  color: #4ade80;
+}
+
+.predict-chart-wrap {
+  position: relative;
+  height: 220px;
+  max-width: 300px;
+  margin: 0 auto;
+}
+
+.gauge-overlay {
+  position: absolute;
+  left: 50%;
+  bottom: 18%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  pointer-events: none;
+  text-align: center;
+}
+
+.gauge-pct {
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 0.95rem;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.gauge-pct.churn {
+  color: #fecaca;
+}
+
+.gauge-pct.ok {
+  color: #bbf7d0;
+}

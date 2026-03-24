@@ -10,7 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="assets/styles.css" />
+    <link rel="stylesheet" href="/assets/styles.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   </head>
   <body>
@@ -37,7 +37,6 @@
             <li><a href="/">Dashboard</a></li>
             <li><a href="/prediction.html">Prediction</a></li>
             <li><a href="/segmentation.html">Customer Segmentation</a></li>
-            <li><a href="/rfms-distributions.html">RFMS Distributions</a></li>
           </ul>
         </nav>
       </div>
@@ -46,10 +45,6 @@
     <main class="section section-tight">
       <div class="section-head">
         <h2>RideWise Dashboard</h2>
-        <p>
-          Business KPIs and quick visual signals derived from your RFMS dataset, riders
-          churn probabilities, and driver vehicle types.
-        </p>
       </div>
 
       <div id="dashboardError" class="error-card" style="display:none; margin-left:auto; margin-right:auto; max-width: 720px"></div>
@@ -66,36 +61,31 @@
           <p>Mean of `churn_prob` across riders.</p>
         </article>
         <article class="card">
-          <h3>Churn rate (>= 0.5)</h3>
-          <div class="kpi-value" id="kpiChurnRate">—</div>
-          <p>Share of riders predicted at risk.</p>
-        </article>
-        <article class="card">
           <h3>Avg monetary (RFMS)</h3>
           <div class="kpi-value" id="kpiAvgMonetary">—</div>
-          <p>Mean spend/monetary feature per rider.</p>
+          <p>Mean spend / monetary feature per rider.</p>
         </article>
         <article class="card">
           <h3>Avg surge exposure</h3>
           <div class="kpi-value" id="kpiAvgSurgeExposure">—</div>
-          <p>Mean fraction of trips occurring under surge pricing.</p>
+          <p>Mean fraction of trips under surge pricing.</p>
         </article>
       </div>
 
       <div class="cards cols-2" style="margin-top: 1.5rem">
         <article class="card">
-          <h3>Revenue generation proxy</h3>
+          <h3>Revenue proxy by rider segment</h3>
           <p style="margin: 0 0 1rem; color: var(--muted)">
-            Average `monetary` by rider segment (higher = more value at risk).
+            Average `monetary` by `riders_segment`.
           </p>
           <div class="chart-wrap">
             <canvas id="revenueBySegmentChart"></canvas>
           </div>
         </article>
         <article class="card">
-          <h3>Ride modes used</h3>
+          <h3>Ride modes (vehicle types)</h3>
           <p style="margin: 0 0 1rem; color: var(--muted)">
-            Distribution of driver vehicle types (SUV, Sedan, Motorcycle).
+            Distribution of driver vehicle types in the fleet dataset.
           </p>
           <div class="chart-wrap">
             <canvas id="rideModesChart"></canvas>
@@ -103,14 +93,56 @@
         </article>
       </div>
 
+      <div class="cards cols-2" style="margin-top: 1.25rem">
+        <article class="card">
+          <h3>Trips by weather condition</h3>
+          <p style="margin: 0 0 1rem; color: var(--muted)">
+            Trip counts from bundled trip aggregates (see API / JSON).
+          </p>
+          <div class="chart-wrap">
+            <canvas id="weatherChart"></canvas>
+          </div>
+        </article>
+        <article class="card">
+          <h3>Total revenue by rider age group</h3>
+          <p style="margin: 0 0 1rem; color: var(--muted)">
+            Sum of fare-related revenue by `rider_age_group` (aggregates file).
+          </p>
+          <div class="chart-wrap">
+            <canvas id="revenueAgeChart"></canvas>
+          </div>
+        </article>
+      </div>
+
+      <div class="cards cols-2" style="margin-top: 1.25rem">
+        <article class="card">
+          <h3>Revenue by period of day</h3>
+          <p style="margin: 0 0 1rem; color: var(--muted)">
+            Revenue by `pickup_period` (aggregates file).
+          </p>
+          <div class="chart-wrap">
+            <canvas id="revenuePeriodChart"></canvas>
+          </div>
+        </article>
+        <article class="card">
+          <h3>Referral vs non-referral riders</h3>
+          <p style="margin: 0 0 1rem; color: var(--muted)">
+            Counts from `referred_by` in `riders.csv` (live data).
+          </p>
+          <div class="chart-wrap">
+            <canvas id="referralChart"></canvas>
+          </div>
+        </article>
+      </div>
+
       <div class="cards" style="margin-top: 1.25rem">
         <article class="card">
-          <h3>Churn risk by customer segment</h3>
+          <h3>Trip payment type</h3>
           <p style="margin: 0 0 1rem; color: var(--muted)">
-            Share of riders with churn probability >= 0.5, grouped by `riders_segment`.
+            Trip counts by payment method (aggregates file).
           </p>
-          <div class="chart-wrap" style="height: 360px">
-            <canvas id="churnBySegmentChart"></canvas>
+          <div class="chart-wrap" style="height: 320px">
+            <canvas id="paymentChart"></canvas>
           </div>
         </article>
       </div>
@@ -123,14 +155,13 @@
           <div>Customer churn intelligence for ride marketplaces.</div>
         </div>
         <p class="disclaimer">
-          This demo visualizes existing dataset artifacts. Validate model performance on your
-          latest data before production use.
+          Trip-level charts use `Data/Processed_data/trip_dashboard_aggregates.json` until you
+          connect a live trip pipeline. Referral counts use your riders table.
         </p>
       </div>
     </footer>
 
-    <script src="assets/dashboard.js" defer></script>
-    <script src="assets/nav.js" defer></script>
+    <script src="/assets/dashboard.js" defer></script>
+    <script src="/assets/nav.js" defer></script>
   </body>
 </html>
-

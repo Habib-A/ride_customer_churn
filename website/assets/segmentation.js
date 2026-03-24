@@ -35,7 +35,7 @@ function chartBar(canvas, labels, values) {
       },
       scales: {
         x: {
-          ticks: { color: "rgba(232, 237, 245, 0.8)" },
+          ticks: { color: "rgba(232, 237, 245, 0.8)", maxRotation: 45, minRotation: 0 },
           grid: { color: "rgba(94, 234, 212, 0.06)" },
         },
         y: {
@@ -49,32 +49,33 @@ function chartBar(canvas, labels, values) {
 
 document.addEventListener("DOMContentLoaded", function () {
   var errorEl = document.getElementById("segmentationError");
-  var canvas = document.getElementById("segmentsChart");
-  var tbody = document.getElementById("topRfmsTableBody");
+  var segCanvas = document.getElementById("segmentsChart");
+  var fCanvas = document.getElementById("freqDistChart");
+  var mCanvas = document.getElementById("monetaryDistChart");
+  var rCanvas = document.getElementById("recencyDistChart");
+  var sCanvas = document.getElementById("surgeDistChart");
 
-  if (!canvas || !tbody) return;
+  if (!segCanvas || !fCanvas || !mCanvas || !rCanvas || !sCanvas) return;
 
-  fetchJSON("/api/segmentation/summary")
-    .then(function (data) {
+  Promise.all([fetchJSON("/api/segmentation/summary"), fetchJSON("/api/segmentation/feature_distributions")])
+    .then(function (results) {
+      var summary = results[0];
+      var dist = results[1];
+
       chartBar(
-        canvas,
-        data.segments.map(function (s) { return s.segment; }),
-        data.segments.map(function (s) { return s.count; })
+        segCanvas,
+        summary.segments.map(function (s) {
+          return s.segment;
+        }),
+        summary.segments.map(function (s) {
+          return s.count;
+        })
       );
 
-      data.top_rfms.forEach(function (row) {
-        var tr = document.createElement("tr");
-
-        var td1 = document.createElement("td");
-        td1.textContent = row.rfms;
-        tr.appendChild(td1);
-
-        var td2 = document.createElement("td");
-        td2.textContent = String(row.count);
-        tr.appendChild(td2);
-
-        tbody.appendChild(tr);
-      });
+      chartBar(fCanvas, dist.frequency.labels, dist.frequency.counts);
+      chartBar(mCanvas, dist.monetary.labels, dist.monetary.counts);
+      chartBar(rCanvas, dist.recency_days.labels, dist.recency_days.counts);
+      chartBar(sCanvas, dist.surge_exposure.labels, dist.surge_exposure.counts);
     })
     .catch(function (err) {
       if (!errorEl) return;
@@ -82,4 +83,3 @@ document.addEventListener("DOMContentLoaded", function () {
       errorEl.style.display = "block";
     });
 });
-

@@ -1,0 +1,28 @@
+{
+  "_comment": "Aggregates aligned with EDA notebook outputs (200k trips). Regenerate from your full trip CSV when available.",
+  "trips_by_weather": [
+    { "label": "Sunny", "count": 98540 },
+    { "label": "Cloudy", "count": 45210 },
+    { "label": "Rain", "count": 31200 },
+    { "label": "Fog", "count": 15050 },
+    { "label": "Storm", "count": 10000 }
+  ],
+  "revenue_by_age_group": [
+    { "label": "Young Adults", "revenue": 1854200.5 },
+    { "label": "Established Adults", "revenue": 3120800.75 },
+    { "label": "Mature Adults", "revenue": 1289900.25 },
+    { "label": "Seniors", "revenue": 412300.0 }
+  ],
+  "revenue_by_period": [
+    { "label": "Early Morning", "revenue": 2100500.0 },
+    { "label": "Morning", "revenue": 1750300.0 },
+    { "label": "Afternoon", "revenue": 1620100.0 },
+    { "label": "Evening", "revenue": 2680900.0 },
+    { "label": "Night", "revenue": 1420800.0 }
+  ],
+  "payment_type": [
+    { "label": "Card", "count": 102400 },
+    { "label": "Mobile Money", "count": 61200 },
+    { "label": "Cash", "count": 36400 }
+  ]
+}

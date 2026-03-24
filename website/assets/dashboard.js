@@ -11,16 +11,14 @@ async function fetchJSON(url) {
   return await resp.json();
 }
 
-function chartBar(canvas, labels, values, labelText) {
+function chartBar(canvas, labels, values, yAxisLabel) {
   var ctx = canvas.getContext("2d");
-
   return new Chart(ctx, {
     type: "bar",
     data: {
       labels: labels,
       datasets: [
         {
-          label: labelText || "",
           data: values,
           backgroundColor: "rgba(45, 212, 191, 0.25)",
           borderColor: "rgba(45, 212, 191, 0.95)",
@@ -41,6 +39,7 @@ function chartBar(canvas, labels, values, labelText) {
           grid: { color: "rgba(94, 234, 212, 0.06)" },
         },
         y: {
+          title: yAxisLabel ? { display: true, text: yAxisLabel, color: "rgba(232,237,245,0.6)" } : undefined,
           ticks: { color: "rgba(232, 237, 245, 0.8)" },
           grid: { color: "rgba(94, 234, 212, 0.06)" },
         },
@@ -52,13 +51,16 @@ function chartBar(canvas, labels, values, labelText) {
 document.addEventListener("DOMContentLoaded", function () {
   var kpiTotal = document.getElementById("kpiTotalRiders");
   var kpiAvgChurn = document.getElementById("kpiAvgChurnProb");
-  var kpiChurnRate = document.getElementById("kpiChurnRate");
   var kpiAvgMonetary = document.getElementById("kpiAvgMonetary");
   var kpiAvgSurge = document.getElementById("kpiAvgSurgeExposure");
 
   var revenueCanvas = document.getElementById("revenueBySegmentChart");
   var modesCanvas = document.getElementById("rideModesChart");
-  var churnCanvas = document.getElementById("churnBySegmentChart");
+  var weatherCanvas = document.getElementById("weatherChart");
+  var revenueAgeCanvas = document.getElementById("revenueAgeChart");
+  var revenuePeriodCanvas = document.getElementById("revenuePeriodChart");
+  var referralCanvas = document.getElementById("referralChart");
+  var paymentCanvas = document.getElementById("paymentChart");
 
   var errorEl = document.getElementById("dashboardError");
 
@@ -66,23 +68,57 @@ document.addEventListener("DOMContentLoaded", function () {
     fetchJSON("/api/dashboard/kpis"),
     fetchJSON("/api/dashboard/revenue_by_segment"),
     fetchJSON("/api/dashboard/ride_modes"),
-    fetchJSON("/api/dashboard/churn_by_segment"),
+    fetchJSON("/api/dashboard/trip_aggregates"),
+    fetchJSON("/api/dashboard/referral_split"),
   ])
     .then(function (results) {
       var kpis = results[0];
       var revenue = results[1];
       var modes = results[2];
-      var churn = results[3];
+      var trip = results[3];
+      var referral = results[4];
 
       setText(kpiTotal, kpis.total_riders.toLocaleString());
-      setText(kpiAvgChurn, (kpis.avg_churn_prob).toFixed(1));
-      setText(kpiChurnRate, (kpis.churn_rate * 100).toFixed(1) + "%");
+      setText(kpiAvgChurn, kpis.avg_churn_prob.toFixed(1));
       setText(kpiAvgMonetary, kpis.avg_monetary.toFixed(1));
       setText(kpiAvgSurge, kpis.avg_surge_exposure.toFixed(2));
 
       chartBar(revenueCanvas, revenue.labels, revenue.avg_monetary, "Avg monetary");
-      chartBar(modesCanvas, modes.labels, modes.counts, "Driver vehicle types");
-      chartBar(churnCanvas, churn.labels, churn.churn_rates.map(function (x) { return x * 100; }), "Churn rate (%)");
+      chartBar(modesCanvas, modes.labels, modes.counts, "Count");
+
+      var w = trip.trips_by_weather || [];
+      chartBar(
+        weatherCanvas,
+        w.map(function (x) { return x.label; }),
+        w.map(function (x) { return x.count; }),
+        "Trips"
+      );
+
+      var age = trip.revenue_by_age_group || [];
+      chartBar(
+        revenueAgeCanvas,
+        age.map(function (x) { return x.label; }),
+        age.map(function (x) { return x.revenue; }),
+        "Revenue"
+      );
+
+      var per = trip.revenue_by_period || [];
+      chartBar(
+        revenuePeriodCanvas,
+        per.map(function (x) { return x.label; }),
+        per.map(function (x) { return x.revenue; }),
+        "Revenue"
+      );
+
+      chartBar(referralCanvas, ["Referred", "Not referred"], [referral.referred, referral.not_referred], "Riders");
+
+      var pay = trip.payment_type || [];
+      chartBar(
+        paymentCanvas,
+        pay.map(function (x) { return x.label; }),
+        pay.map(function (x) { return x.count; }),
+        "Trips"
+      );
     })
     .catch(function (err) {
       if (!errorEl) return;
@@ -90,4 +126,3 @@ document.addEventListener("DOMContentLoaded", function () {
       errorEl.style.display = "block";
     });
 });
-
