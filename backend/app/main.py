@@ -1,8 +1,10 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
+from fastapi.middleware.cors import CORSMiddleware
 import joblib
 import json
+import os
 import numpy as np
 from pathlib import Path
 from fastapi.staticfiles import StaticFiles
@@ -11,11 +13,35 @@ from functools import lru_cache
 
 app = FastAPI(title="RideWise Churn Prediction API")
 
+# CORS: needed if the UI is on a different origin (e.g. Static Site + API split).
+_cors = os.environ.get("CORS_ORIGINS", "*").strip()
+_cors_origins = [o.strip() for o in _cors.split(",") if o.strip()] if _cors != "*" else ["*"]
+# Browsers disallow credentials + wildcard origin; disable credentials for "*".
+_cors_cred = False if _cors_origins == ["*"] else True
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_cors_origins,
+    allow_credentials=_cors_cred,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+def _repo_root() -> Path:
+    """Repository root (contains Data/, website/, backend/). Override with RIDEWISE_ROOT on Render if needed."""
+    env = os.environ.get("RIDEWISE_ROOT", "").strip()
+    if env:
+        return Path(env).resolve()
+    # backend/app/main.py -> parents[2] == repo root
+    return Path(__file__).resolve().parents[2]
+
+
+REPO_ROOT = _repo_root()
+
 # Load model
 MODEL_PATH = Path(__file__).resolve().parent.parent / "model" / "random_forest_model.pkl"
 model = joblib.load(MODEL_PATH)
 
-REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 DATA_DIR = REPO_ROOT / "Data"
 RFMS_CSV = DATA_DIR / "Processed_data" / "RideWise_RFMS_df.csv"
 RIDERS_CSV = DATA_DIR / "Raw_data" / "riders.csv"
@@ -208,9 +234,27 @@ def predict_churn(data: RideFeatures):
     }
 
 
+@app.get("/api/health")
+def api_health():
+    return {"ok": True}
+
+
+@app.get("/health")
+def health():
+    return {"ok": True}
+
+
+@app.get("/ridewise-env.js")
+def ridewise_env_js():
+    """Sets window.__RIDEWISE_API_BASE__ for split static/API deployments."""
+    base = os.environ.get("RIDEWISE_PUBLIC_API_URL", "").strip().rstrip("/")
+    body = "window.__RIDEWISE_API_BASE__=" + json.dumps(base) + ";\n"
+    return Response(content=body, media_type="application/javascript")
+
+
 # Serve the frontend without `StaticFiles` mounted at `/` — that mount can intercept
 # `/api/...` on some deployments and return 404 for API routes. Only `/assets` is mounted.
-STATIC_DIR = Path(__file__).resolve().parent.parent.parent / "website"
+STATIC_DIR = REPO_ROOT / "website"
 _ALLOWED_HTML = frozenset(
     {"index.html", "dashboard.html", "prediction.html", "segmentation.html"}
 )

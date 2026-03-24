@@ -154,21 +154,47 @@ document.addEventListener("DOMContentLoaded", function () {
 
     disableSubmit(true);
     try {
-      var response = await fetch("/predict", {
+      var predictUrl =
+        typeof window.ridewiseUrl === "function" ? window.ridewiseUrl("/predict") : "/predict";
+      var response = await fetch(predictUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
+      var rawBody = await response.text();
+
       if (!response.ok) {
-        var text = await response.text();
         setText(status, "Prediction failed. Server returned: " + response.status);
-        if (errorCard) setText(errorCard, text ? text : "Unknown server error.");
+        if (errorCard)
+          setText(
+            errorCard,
+            rawBody ? rawBody.slice(0, 500) : "Empty body (wrong host? Use one Web Service or set API URL)."
+          );
         setVisible(errorCard, true);
         return;
       }
 
-      var data = await response.json();
+      if (!rawBody) {
+        setText(status, "Empty response from server.");
+        if (errorCard)
+          setText(
+            errorCard,
+            "No JSON body. If the UI is a Render Static Site, point it at the API: load https://YOUR-API.onrender.com/ridewise-env.js first."
+          );
+        setVisible(errorCard, true);
+        return;
+      }
+
+      var data;
+      try {
+        data = JSON.parse(rawBody);
+      } catch (parseErr) {
+        setText(status, "Invalid JSON from server.");
+        if (errorCard) setText(errorCard, rawBody.slice(0, 400));
+        setVisible(errorCard, true);
+        return;
+      }
       var probability = Number(data.probability);
       var isChurning = Number(data.is_churning);
 

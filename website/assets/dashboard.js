@@ -3,12 +3,18 @@ function setText(el, text) {
   el.textContent = text;
 }
 
-async function fetchJSON(url) {
+async function fetchJSON(path) {
+  var url = typeof window.ridewiseUrl === "function" ? window.ridewiseUrl(path) : path;
   var resp = await fetch(url, { method: "GET" });
   if (!resp.ok) {
-    throw new Error("Request failed: " + resp.status + " " + resp.statusText);
+    var t = await resp.text();
+    throw new Error(
+      "Request failed: " + resp.status + " " + resp.statusText + (t ? " — " + t.slice(0, 120) : "")
+    );
   }
-  return await resp.json();
+  var raw = await resp.text();
+  if (!raw) throw new Error("Empty response from " + url);
+  return JSON.parse(raw);
 }
 
 function chartBar(canvas, labels, values, yAxisLabel) {

@@ -13,4 +13,11 @@ services:
     plan: free
     buildCommand: "pip install -r backend/requirements.txt"
     startCommand: "cd backend && uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"
-    healthCheckPath: /
+    healthCheckPath: /health
+    envVars:
+      # Use ONE Web Service for HTML + API. If you use a separate Static Site for the UI,
+      # set RIDEWISE_PUBLIC_API_URL to this service URL and add that site's origin to CORS_ORIGINS.
+      - key: RIDEWISE_PUBLIC_API_URL
+        value: ""
+      - key: CORS_ORIGINS
+        value: "*"
