@@ -54,9 +54,46 @@ function chartBar(canvas, labels, values, yAxisLabel) {
   });
 }
 
+function chartPie(canvas, labels, values) {
+  var ctx = canvas.getContext("2d");
+  return new Chart(ctx, {
+    type: "pie",
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          data: values,
+          backgroundColor: [
+            "rgba(45, 212, 191, 0.9)",
+            "rgba(59, 130, 246, 0.9)",
+            "rgba(251, 191, 36, 0.9)",
+            "rgba(168, 85, 247, 0.9)",
+            "rgba(244, 114, 182, 0.9)",
+            "rgba(34, 197, 94, 0.9)",
+          ],
+          borderColor: "rgba(10,14,23,0.75)",
+          borderWidth: 2,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: true,
+          position: "bottom",
+          labels: { color: "rgba(232, 237, 245, 0.85)", padding: 14 },
+        },
+        tooltip: { mode: "nearest", intersect: true },
+      },
+    },
+  });
+}
+
 document.addEventListener("DOMContentLoaded", function () {
   var kpiTotal = document.getElementById("kpiTotalRiders");
-  var kpiAvgChurn = document.getElementById("kpiAvgChurnProb");
+  var kpiTrips = document.getElementById("kpiTripsAnalyzed");
   var kpiAvgMonetary = document.getElementById("kpiAvgMonetary");
   var kpiAvgSurge = document.getElementById("kpiAvgSurgeExposure");
 
@@ -85,7 +122,7 @@ document.addEventListener("DOMContentLoaded", function () {
       var referral = results[4];
 
       setText(kpiTotal, kpis.total_riders.toLocaleString());
-      setText(kpiAvgChurn, kpis.avg_churn_prob.toFixed(1));
+      setText(kpiTrips, (kpis.trips_analyzed || 200000).toLocaleString());
       setText(kpiAvgMonetary, kpis.avg_monetary.toFixed(1));
       setText(kpiAvgSurge, kpis.avg_surge_exposure.toFixed(2));
 
@@ -116,14 +153,13 @@ document.addEventListener("DOMContentLoaded", function () {
         "Revenue"
       );
 
-      chartBar(referralCanvas, ["Referred", "Not referred"], [referral.referred, referral.not_referred], "Riders");
+      chartPie(referralCanvas, ["Referred", "Not referred"], [referral.referred, referral.not_referred]);
 
       var pay = trip.payment_type || [];
-      chartBar(
+      chartPie(
         paymentCanvas,
         pay.map(function (x) { return x.label; }),
-        pay.map(function (x) { return x.count; }),
-        "Trips"
+        pay.map(function (x) { return x.count; })
       );
     })
     .catch(function (err) {

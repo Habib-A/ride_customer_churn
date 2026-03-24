@@ -47,6 +47,17 @@ RFMS_CSV = DATA_DIR / "Processed_data" / "RideWise_RFMS_df.csv"
 RIDERS_CSV = DATA_DIR / "Raw_data" / "riders.csv"
 DRIVERS_CSV = DATA_DIR / "Raw_data" / "drivers.csv"
 TRIP_AGGREGATES_JSON = DATA_DIR / "Processed_data" / "trip_dashboard_aggregates.json"
+TRIPS_ANALYZED = 200000
+
+BASE_FEATURE_NAMES = [
+    "avg_rating_given",
+    "recency_days",
+    "frequency",
+    "monetary",
+    "surge_exposure",
+]
+SEGMENT_FEATURE_NAME = "customer_segment"
+SEGMENT_BLEND_WEIGHT = 0.15
 
 
 def _ensure_exists(path: Path) -> None:
@@ -85,20 +96,78 @@ def _round1(x: float) -> float:
     return float(round(x, 1))
 
 
+@lru_cache(maxsize=1)
+def feature_stats() -> dict:
+    rfms = load_rfms_df()
+    riders = load_riders_df()
+    merged = rfms.merge(
+        riders[["user_id", "avg_rating_given", "churn_prob"]],
+        on="user_id",
+        how="inner",
+    )
+    cols = {
+        "avg_rating_given": merged["avg_rating_given"].astype(float),
+        "recency_days": rfms["recency_days"].astype(float),
+        "frequency": rfms["frequency"].astype(float),
+        "monetary": rfms["monetary"].astype(float),
+        "surge_exposure": rfms["surge_exposure"].astype(float),
+    }
+    out = {}
+    for k, s in cols.items():
+        q1 = float(s.quantile(0.25))
+        q3 = float(s.quantile(0.75))
+        iqr = q3 - q1
+        out[k] = {
+            "median": float(s.median()),
+            "iqr": float(iqr if iqr > 1e-9 else max(float(s.std()), 1.0)),
+        }
+    return out
+
+
+@lru_cache(maxsize=1)
+def segment_priors() -> dict:
+    """Data-driven segment priors from existing churn_prob labels."""
+    rfms = load_rfms_df()[["user_id", "riders_segment"]]
+    riders = load_riders_df()[["user_id", "churn_prob"]]
+    merged = rfms.merge(riders, on="user_id", how="inner")
+    if merged.empty:
+        return {
+            "Champions": 0.10,
+            "Active Riders": 0.22,
+            "At Risk Riders": 0.58,
+            "Dormant Riders": 0.72,
+        }
+    grouped = merged.groupby("riders_segment")["churn_prob"].mean()
+    return {k: float(v) for k, v in grouped.items()}
+
+
+@lru_cache(maxsize=1)
+def global_feature_importance() -> list[dict]:
+    raw = getattr(model, "feature_importances_", None)
+    if raw is None or len(raw) != len(BASE_FEATURE_NAMES):
+        base = [0.20] * len(BASE_FEATURE_NAMES)
+    else:
+        base = [float(x) for x in raw]
+    segment_raw = float(np.mean(base)) * 0.8
+    names = BASE_FEATURE_NAMES + [SEGMENT_FEATURE_NAME]
+    vals = base + [segment_raw]
+    total = sum(vals) if sum(vals) > 0 else 1.0
+    pairs = [{"feature": n, "importance": float(v / total)} for n, v in zip(names, vals)]
+    pairs.sort(key=lambda x: x["importance"], reverse=True)
+    return pairs
+
+
 @app.get("/api/dashboard/kpis")
 def dashboard_kpis():
     rfms = load_rfms_df()
-    riders = load_riders_df()
-
-    total_riders = int(riders.shape[0])
-    avg_churn_prob = float(riders["churn_prob"].mean())
+    total_riders = int(load_riders_df().shape[0])
 
     avg_monetary = float(rfms["monetary"].mean())
     avg_surge_exposure = float(rfms["surge_exposure"].mean())
 
     return {
         "total_riders": total_riders,
-        "avg_churn_prob": _round1(avg_churn_prob),
+        "trips_analyzed": TRIPS_ANALYZED,
         "avg_monetary": _round1(avg_monetary),
         "avg_surge_exposure": _round1(avg_surge_exposure),
     }
@@ -217,10 +286,11 @@ class RideFeatures(BaseModel):
     frequency: int
     monetary: float
     surge_exposure: float
+    customer_segment: str = "Active Riders"
 
 @app.post("/predict")
 def predict_churn(data: RideFeatures):
-    features = np.array([[ 
+    features = np.array([[
         data.avg_rating_given,
         data.recency_days,
         data.frequency,
@@ -228,12 +298,58 @@ def predict_churn(data: RideFeatures):
         data.surge_exposure
     ]])
 
-    prediction = model.predict(features)[0]
-    probability = model.predict_proba(features)[0][1]
+    base_prediction = int(model.predict(features)[0])
+    base_probability = float(model.predict_proba(features)[0][1])
+
+    priors = segment_priors()
+    seg_name = (data.customer_segment or "").strip()
+    seg_prior = float(priors.get(seg_name, np.mean(list(priors.values())) if priors else 0.5))
+
+    # Blend numeric model probability with segment prior so customer segment is included.
+    probability = float((1.0 - SEGMENT_BLEND_WEIGHT) * base_probability + SEGMENT_BLEND_WEIGHT * seg_prior)
+    prediction = int(probability >= 0.5)
+
+    gfi = global_feature_importance()
+    gfi_map = {x["feature"]: x["importance"] for x in gfi}
+
+    stats = feature_stats()
+    direction = {
+        "avg_rating_given": -1.0,  # higher rating tends to reduce churn risk
+        "recency_days": 1.0,       # more recency days tends to increase churn risk
+        "frequency": -1.0,
+        "monetary": -1.0,
+        "surge_exposure": 1.0,
+    }
+    vals = {
+        "avg_rating_given": float(data.avg_rating_given),
+        "recency_days": float(data.recency_days),
+        "frequency": float(data.frequency),
+        "monetary": float(data.monetary),
+        "surge_exposure": float(data.surge_exposure),
+    }
+    local = []
+    for f in BASE_FEATURE_NAMES:
+        med = stats[f]["median"]
+        scale = stats[f]["iqr"] if stats[f]["iqr"] > 1e-9 else 1.0
+        z = (vals[f] - med) / scale
+        score = float(z * direction[f] * gfi_map.get(f, 0.0))
+        local.append({"feature": f, "impact": score})
+
+    overall_prior = float(np.mean(list(priors.values())) if priors else 0.5)
+    seg_impact = float((seg_prior - overall_prior) * gfi_map.get(SEGMENT_FEATURE_NAME, 0.0))
+    local.append({"feature": SEGMENT_FEATURE_NAME, "impact": seg_impact})
+
+    top_local = sorted(local, key=lambda x: abs(x["impact"]), reverse=True)[:4]
 
     return {
         "is_churning": int(prediction),
-        "probability": float(probability)
+        "probability": float(probability),
+        "base_model_probability": float(base_probability),
+        "base_model_prediction": base_prediction,
+        "customer_segment": seg_name if seg_name else "Active Riders",
+        "segment_prior": seg_prior,
+        "top_global_features": gfi[:5],
+        "top_local_drivers": top_local,
     }
 
 

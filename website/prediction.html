@@ -121,6 +121,16 @@
                   required
                 />
               </label>
+
+              <label class="field">
+                <span>Customer segment</span>
+                <select name="customer_segment">
+                  <option value="Champions">Champions</option>
+                  <option value="Active Riders" selected>Active Riders</option>
+                  <option value="At Risk Riders">At Risk Riders</option>
+                  <option value="Dormant Riders">Dormant Riders</option>
+                </select>
+              </label>
             </div>
 
             <div class="form-actions">
@@ -161,6 +171,13 @@
           <div class="result-hint">
             Half doughnut: churn probability (red) vs remaining mass (green). Same-origin
             <code>POST /predict</code>.
+          </div>
+
+          <div id="featureInsights" class="feature-insights" style="display: none">
+            <h4>Top global feature importance</h4>
+            <ul id="globalFeaturesList" class="insight-list"></ul>
+            <h4>Top prediction drivers</h4>
+            <ul id="localDriversList" class="insight-list"></ul>
           </div>
         </article>
       </div>

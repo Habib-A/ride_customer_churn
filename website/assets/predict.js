@@ -19,6 +19,9 @@ document.addEventListener("DOMContentLoaded", function () {
   var canvas = document.getElementById("churnGaugeChart");
   var gaugeChurnPct = document.getElementById("gaugeChurnPct");
   var gaugeNotChurnPct = document.getElementById("gaugeNotChurnPct");
+  var featureInsights = document.getElementById("featureInsights");
+  var globalFeaturesList = document.getElementById("globalFeaturesList");
+  var localDriversList = document.getElementById("localDriversList");
 
   var submitBtn = form.querySelector('button[type="submit"]');
   var spinner = form.querySelector("#predictSpinner");
@@ -31,6 +34,7 @@ document.addEventListener("DOMContentLoaded", function () {
     frequency: form.querySelector('input[name="frequency"]'),
     monetary: form.querySelector('input[name="monetary"]'),
     surge_exposure: form.querySelector('input[name="surge_exposure"]'),
+    customer_segment: form.querySelector('select[name="customer_segment"]'),
   };
 
   function disableSubmit(disabled) {
@@ -136,6 +140,9 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     if (gaugeChurnPct) gaugeChurnPct.textContent = "";
     if (gaugeNotChurnPct) gaugeNotChurnPct.textContent = "";
+    if (featureInsights) featureInsights.style.display = "none";
+    if (globalFeaturesList) globalFeaturesList.innerHTML = "";
+    if (localDriversList) localDriversList.innerHTML = "";
 
     var payload = {
       avg_rating_given: Number(fields.avg_rating_given.value),
@@ -143,6 +150,7 @@ document.addEventListener("DOMContentLoaded", function () {
       frequency: Number(fields.frequency.value),
       monetary: Number(fields.monetary.value),
       surge_exposure: Number(fields.surge_exposure.value),
+      customer_segment: fields.customer_segment ? fields.customer_segment.value : "Active Riders",
     };
 
     var validationError = validatePayload(payload);
@@ -214,6 +222,25 @@ document.addEventListener("DOMContentLoaded", function () {
       setVisible(errorCard, false);
       setVisible(resultWrap, true);
       setText(status, "Prediction complete.");
+
+      if (featureInsights && globalFeaturesList && localDriversList) {
+        var globalFeatures = Array.isArray(data.top_global_features) ? data.top_global_features : [];
+        var localDrivers = Array.isArray(data.top_local_drivers) ? data.top_local_drivers : [];
+
+        globalFeatures.forEach(function (g) {
+          var li = document.createElement("li");
+          li.textContent = g.feature + ": " + (Number(g.importance) * 100).toFixed(1) + "%";
+          globalFeaturesList.appendChild(li);
+        });
+        localDrivers.forEach(function (d) {
+          var li = document.createElement("li");
+          var impact = Number(d.impact);
+          var sign = impact >= 0 ? "+" : "-";
+          li.textContent = d.feature + ": " + sign + Math.abs(impact).toFixed(3) + " impact";
+          localDriversList.appendChild(li);
+        });
+        featureInsights.style.display = "block";
+      }
     } catch (err) {
       setText(status, "Network error contacting the prediction API.");
       setVisible(errorCard, true);
