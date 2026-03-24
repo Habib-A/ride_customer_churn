@@ -154,8 +154,11 @@ def trip_aggregates():
 @app.get("/api/dashboard/referral_split")
 def referral_split():
     riders = load_riders_df()
+    if "referred_by" not in riders.columns:
+        # Defensive fallback if schema changes.
+        return {"referred": 0, "not_referred": int(riders.shape[0])}
     ref = riders["referred_by"].astype(str).str.strip()
-    referred = int(((ref.notna()) & (ref != "") & (ref.lower() != "nan")).sum())
+    referred = int(((ref.notna()) & (ref != "") & (ref.str.lower() != "nan")).sum())
     total = int(riders.shape[0])
     return {
         "referred": referred,
